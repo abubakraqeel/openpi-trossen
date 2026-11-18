@@ -807,6 +807,41 @@ _CONFIGS = [
         ema_decay=None,
         save_interval=5000,
     ),
+    # EXP-03 (thesis): servo cover into slot, right arm only (7-dim state/action), cameras cam_high and
+    # cam_right_wrist. No `assets` override, so norm stats are computed fresh into this config's assets dir.
+    # Training settings (LoRA, batch size, steps) are provisional; data settings are what the smoke test checks.
+    TrainConfig(
+        name="pi05_exp03",
+        model=pi0_config.Pi0Config(pi05=True),
+        data=LeRobotAlohaDataConfig(
+            use_delta_joint_actions=False,
+            adapt_to_pi=False,
+            repo_id="local/exp3",
+            default_prompt="insert the servo cover into the slot",
+            repack_transforms=_transforms.Group(
+                inputs=[
+                    _transforms.RepackTransform(
+                        {
+                            "images": {
+                                "cam_high": "observation.images.cam_high",
+                                "cam_right_wrist": "observation.images.cam_right_wrist",
+                            },
+                            "state": "observation.state",
+                            "actions": "action",
+                        }
+                    )
+                ]
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
+        num_train_steps=30_000,
+        batch_size=8,
+        freeze_filter=pi0_config.Pi0Config(
+            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"
+        ).get_freeze_filter(),
+        ema_decay=None,
+        save_interval=5000,
+    ),
     # This is an example of a short horizon task finetuned from pi05 base model using LoRA.
     TrainConfig(
         name="pi05_trossen_transfer_block",
