@@ -809,7 +809,7 @@ _CONFIGS = [
     ),
     # EXP-03 (thesis): servo cover into slot, right arm only (7-dim state/action), cameras cam_high and
     # cam_right_wrist. No `assets` override, so norm stats are computed fresh into this config's assets dir.
-    # Training settings (LoRA, batch size, steps) are provisional; data settings are what the smoke test checks.
+    # Training settings follow the EXP-03 plan: full fine-tune, 10k steps, batch 32, EMA 0.99 (the default).
     TrainConfig(
         name="pi05_exp03",
         model=pi0_config.Pi0Config(pi05=True),
@@ -834,13 +834,15 @@ _CONFIGS = [
             ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
-        num_train_steps=30_000,
-        batch_size=8,
-        freeze_filter=pi0_config.Pi0Config(
-            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"
-        ).get_freeze_filter(),
-        ema_decay=None,
-        save_interval=5000,
+        num_train_steps=10_000,
+        batch_size=32,
+        lr_schedule=_optimizer.CosineDecaySchedule(
+            warmup_steps=1_000,
+            peak_lr=2.5e-5,
+            decay_steps=10_000,
+            decay_lr=2.5e-6,
+        ),
+        save_interval=2500,
     ),
     # This is an example of a short horizon task finetuned from pi05 base model using LoRA.
     TrainConfig(
