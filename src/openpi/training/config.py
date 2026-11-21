@@ -843,6 +843,8 @@ _CONFIGS = [
             decay_lr=2.5e-6,
         ),
         save_interval=2500,
+        # Keep every saved checkpoint: the checkpoint is chosen on the robot. The default (5000) deletes 2500 and 7500.
+        keep_period=2500,
     ),
     # This is an example of a short horizon task finetuned from pi05 base model using LoRA.
     TrainConfig(
